@@ -2,12 +2,22 @@ const {expect} = require('chai');
 
 const {
   getCellCoordsFromIndex,
-  buildFallIndents,
   forbidOutOfBoundsIntents,
   forbidGroupIntents,
   collideSameValueIntents,
   applyIntents,
-} = require('..');
+} = require('../shared');
+
+const {
+  buildFallIndents,
+} = require('../falling');
+
+const {
+  findGroupCenter,
+  rotateCW,
+} = require('../rotation');
+
+// const {prettyPrintScene} = require('../util');
 
 const x = 1;
 const _ = 0;
@@ -152,4 +162,51 @@ describe('falling', () => {
 
     expect(conflicts).to.eql([3, 5]);
   });
+});
+
+describe('rotation', () => {
+  const scene = [
+    _, x, _,
+    _, x, x,
+    _, x, _,
+    _, _, _,
+  ];
+
+  const size = {
+    width: 3,
+    height: 4,
+  };
+
+  const groups = [
+    [1, 4, 5, 7],
+    // [1],
+  ];
+
+  it('finds the center of a figure', () => {
+    {
+      const center = findGroupCenter(groups[0], size.width);
+      expect(center).to.eql({x: 1, y: 1});
+    }
+    {
+      const center = findGroupCenter([3, 4, 5, 7], size.width);
+      expect(center).to.eql({x: 1, y: 1});
+    }
+  });
+
+  it('rotates a figure clockwise', () => {
+    const intents = rotateCW(groups[0], size.width);
+    forbidOutOfBoundsIntents(intents, size);
+    forbidGroupIntents(intents, groups);
+    collideSameValueIntents(intents, scene, size.width);
+    const {
+      scene: newScene,
+    } = applyIntents(intents, scene, size.width);
+
+    expect(newScene).to.eql([
+      _, _, _,
+      x, x, x,
+      _, x, _,
+      _, _, _,
+    ]);
+  })
 });

@@ -8,33 +8,10 @@ function getCellIndexFromCoords({x, y}, sceneWidth) {
   return y * sceneWidth + x;
 }
 
-const fallDirections = {
-  1: 1,
-  0: -1,
-};
-
 const oppositeValues = {
   1: 0,
   0: 1,
 };
-
-function buildFallIndents(scene, sceneWidth) {
-  return scene.map((cellValue, cellIndex) => {
-    const fallDirection = fallDirections[cellValue];
-    // consider building 2 change intents instead of 1 movement intent
-    const sourceCoords = getCellCoordsFromIndex(cellIndex, sceneWidth); // maybe destruct
-    const targetCoords = {
-      x: sourceCoords.x,
-      y: sourceCoords.y + fallDirection,
-    };
-    return {
-      sourceIndex: cellIndex,
-      // sourceCoords,
-      targetCoords,
-      isPermitted: true,
-    };
-  });
-}
 
 // better name, not forbit or permit, something like control, filter or validate
 function forbidOutOfBoundsIntents(intents, {width, height}) {
@@ -77,16 +54,23 @@ function collideSameValueIntents(intents, scene, sceneWidth) {
 
       // todo: optimize by walking the chain backwards and forbidding intents one by one
 
-      do {
+      while (true) {
         targetIndex = getCellIndexFromCoords(targetIntent.targetCoords, sceneWidth);
         const targetValue = scene[targetIndex];
         const sourceValue = scene[targetIntent.sourceIndex];
         if (targetValue !== sourceValue) {
           return;
         }
-      } while (targetIntent = intents.find((intent) => intent.isPermitted && intent.sourceIndex === targetIndex));
-
-      intent.isPermitted = false;
+        targetIntent = intents.find((intent) => intent.isPermitted && intent.sourceIndex === targetIndex);
+        if (!targetIntent || !targetIntent.isPermitted) {
+          intent.isPermitted = false;
+          return;
+        }
+        if (intent.sourceIndex === targetIntent.sourceIndex) {
+          // circular movement
+          return;
+        }
+      }
     }
   });
 }
@@ -129,7 +113,6 @@ function applyIntents(intents, scene, sceneWidth) {
 
 module.exports = {
   getCellCoordsFromIndex,
-  buildFallIndents,
   forbidOutOfBoundsIntents,
   forbidGroupIntents,
   collideSameValueIntents,
