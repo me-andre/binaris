@@ -24,49 +24,64 @@ function count(array, condition) {
   return i;
 }
 
-function findGroupCenter(group, sceneWidth) {
+function findGroupCenters(group, sceneWidth) {
   // todo consider optimization of finding Y axis bounds (indices should be enough)
   const coords = group.map((cellIndex) => getCellCoordsFromIndex(cellIndex, sceneWidth));
   const {x: minX} = minBy(coords, ({x}) => x);
   const {x: maxX} = maxBy(coords, ({x}) => x);
   const {y: minY} = minBy(coords, ({y}) => y);
   const {y: maxY} = maxBy(coords, ({y}) => y);
-  let x = minX + (maxX - minX) / 2;
-  let y = minY + (maxY - minY) / 2;
-  if (x % 1) {
+  const x = minX + (maxX - minX) / 2;
+  const y = minY + (maxY - minY) / 2;
+  const centersX = [];
+  const centersY = [];
+  const centers = [];
+  if (x % 1 === 0) {
+    centersX.push(x);
+  } else {
     const leftX = Math.floor(x);
     const rightX = Math.ceil(x);
     const leftWeight = count(coords, ({x}) => x === leftX);
     const rightWeight = count(coords, ({x}) => x === rightX);
     if (leftWeight > rightWeight) {
-      x  = leftX;
+      centersX.push(leftX);
     } else if (rightWeight > leftWeight) {
-      x = rightX;
+      centersX.push(rightX);
+    } else {
+      centersX.push(leftX, rightX);
     }
   }
-  if (y % 1) {
+  if (y % 1 === 0) {
+    centersY.push(y);
+  } else {
     const topY = Math.floor(y);
     const bottomY = Math.ceil(y);
     const topWeight = count(coords, ({y}) => y === topY);
     const bottomWeight = count(coords, ({y}) => y === bottomY);
     if (topWeight > bottomWeight) {
-      y = topY;
+      centersY.push(topY);
     } else if (bottomWeight > topWeight) {
-      y = bottomY;
+      centersY.push(bottomY);
+    } else {
+      centersY.push(topY, bottomY);
     }
   }
-  return {x, y};
+  for (const x of centersX) {
+    for (const y of centersY) {
+      centers.push({x, y});
+    }
+  }
+  return centers;
 }
 
-function rotate(group, sceneWidth, rotationMatrix) {
-  const center = findGroupCenter(group, sceneWidth);
+function rotate(group, groupCenter, sceneWidth, rotationMatrix) {
   return group.map((cellIndex) => {
     // consider mapping cellIndices to cellCoords at the toplevel of rotation
     const {x, y} = getCellCoordsFromIndex(cellIndex, sceneWidth);
-    const distX = x - center.x;
-    const distY = y - center.y;
-    const newX = center.x + distY * rotationMatrix.y;
-    const newY = center.y + distX * rotationMatrix.x;
+    const distX = x - groupCenter.x;
+    const distY = y - groupCenter.y;
+    const newX = groupCenter.x + distY * rotationMatrix.y;
+    const newY = groupCenter.y + distX * rotationMatrix.x;
     return {
       sourceIndex: cellIndex,
       targetCoords: {
@@ -78,16 +93,16 @@ function rotate(group, sceneWidth, rotationMatrix) {
   });
 }
 
-function rotateCW(group, sceneWidth) {
-  return rotate(group, sceneWidth, rotationMatrix.cw);
+function rotateCW(group, groupCenter, sceneWidth) {
+  return rotate(group, groupCenter, sceneWidth, rotationMatrix.cw);
 }
 
-function rotateCCW(group, sceneWidth) {
-  return rotate(group, sceneWidth, rotationMatrix.ccw);
+function rotateCCW(group, groupCenter, sceneWidth) {
+  return rotate(group, groupCenter, sceneWidth, rotationMatrix.ccw);
 }
 
 module.exports = {
-  findGroupCenter,
+  findGroupCenters,
   rotateCW,
   rotateCCW,
 };

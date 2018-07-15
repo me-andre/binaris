@@ -13,12 +13,12 @@ const {
 } = require('../falling');
 
 const {
-  findGroupCenter,
+  findGroupCenters,
   rotateCW,
   rotateCCW,
 } = require('../rotation');
 
-// const {prettyPrintScene} = require('../util');
+const {prettyPrintScene} = require('../util');
 
 const x = 1;
 const _ = 0;
@@ -185,17 +185,18 @@ describe('rotation', () => {
 
   it('finds the center of a figure', () => {
     {
-      const center = findGroupCenter(groups[0], size.width);
+      const [center] = findGroupCenters(groups[0], size.width);
       expect(center).to.eql({x: 1, y: 1});
     }
     {
-      const center = findGroupCenter([3, 4, 5, 7], size.width);
+      const [center] = findGroupCenters([3, 4, 5, 7], size.width);
       expect(center).to.eql({x: 1, y: 1});
     }
   });
 
   it('rotates a figure clockwise', () => {
-    const intents = rotateCW(groups[0], size.width);
+    const [center] = findGroupCenters(groups[0], size.width);
+    const intents = rotateCW(groups[0], center, size.width);
     forbidOutOfBoundsIntents(intents, size);
     forbidGroupIntents(intents, groups);
     collideSameValueIntents(intents, scene, size.width);
@@ -212,7 +213,8 @@ describe('rotation', () => {
   });
 
   it('rotates a figure counter-clockwise', () => {
-    const intents = rotateCCW(groups[0], size.width);
+    const [center] = findGroupCenters(groups[0], size.width);
+    const intents = rotateCCW(groups[0], center, size.width);
     forbidOutOfBoundsIntents(intents, size);
     forbidGroupIntents(intents, groups);
     collideSameValueIntents(intents, scene, size.width);
@@ -225,6 +227,90 @@ describe('rotation', () => {
       x, x, x,
       _, _, _,
       _, _, _,
+    ]);
+  });
+
+  it('rotates a figure which center is between the cells', () => {
+    const scene = [
+      _, _, _, _, _,
+      _, _, x, _, _,
+      _, _, x, _, _,
+      _, _, x, _, _,
+      _, _, x, _, _,
+      _, _, _, _, _,
+    ];
+
+    const size = {
+      width: 5,
+      height: 6,
+    };
+
+    const groups = [
+      [7, 12, 17, 22],
+      // [1],
+    ];
+
+    const centers = findGroupCenters(groups[0], size.width);
+    const center = centers.find(({y}) => y === 2);
+    const intents = rotateCW(groups[0], center, size.width);
+    forbidOutOfBoundsIntents(intents, size);
+    forbidGroupIntents(intents, groups);
+    collideSameValueIntents(intents, scene, size.width);
+    const {
+      scene: newScene,
+    } = applyIntents(intents, scene, size.width);
+
+    expect(newScene).to.eql([
+      _, _, _, _, _,
+      _, _, _, _, _,
+      x, x, x, x, _,
+      _, _, _, _, _,
+      _, _, _, _, _,
+      _, _, _, _, _,
+    ]);
+  });
+
+  it("tries different centers if rotation doesn't succeed", () => {
+    const scene = [
+      _, x, _, _,
+      _, x, _, _,
+      _, x, _, _,
+      _, x, _, _,
+    ];
+
+    const size = {
+      width: 4,
+      height: 4,
+    };
+
+    const groups = [
+      [1, 5, 9, 13],
+      // [1],
+    ];
+
+    const centers = findGroupCenters(groups[0], size.width);
+
+    let center;
+    let newScene;
+
+    for (center of centers) {
+      const intents = rotateCW(groups[0], center, size.width);
+      forbidOutOfBoundsIntents(intents, size);
+      forbidGroupIntents(intents, groups);
+      collideSameValueIntents(intents, scene, size.width);
+      newScene = applyIntents(intents, scene, size.width).scene;
+      if (intents.every(({isPermitted}) => isPermitted)) {
+        break;
+      }
+    }
+
+    expect(center).to.eql({x: 1, y: 2});
+
+    expect(newScene).to.eql([
+      _, _, _, _,
+      _, _, _, _,
+      x, x, x, x,
+      _, _, _, _,
     ]);
   });
 });
