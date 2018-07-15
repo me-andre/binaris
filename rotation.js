@@ -82,7 +82,12 @@ function rotateCW(group, sceneWidth) {
   return rotate(group, sceneWidth, rotationMatrix.cw);
 }
 
+function rotateCCW(group, sceneWidth) {
+  return rotate(group, sceneWidth, rotationMatrix.ccw);
+}
+
 module.exports = {
   findGroupCenter,
   rotateCW,
+  rotateCCW,
 };

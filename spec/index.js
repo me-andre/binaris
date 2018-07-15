@@ -15,6 +15,7 @@ const {
 const {
   findGroupCenter,
   rotateCW,
+  rotateCCW,
 } = require('../rotation');
 
 // const {prettyPrintScene} = require('../util');
@@ -208,5 +209,22 @@ describe('rotation', () => {
       _, x, _,
       _, _, _,
     ]);
-  })
+  });
+
+  it('rotates a figure counter-clockwise', () => {
+    const intents = rotateCCW(groups[0], size.width);
+    forbidOutOfBoundsIntents(intents, size);
+    forbidGroupIntents(intents, groups);
+    collideSameValueIntents(intents, scene, size.width);
+    const {
+      scene: newScene,
+    } = applyIntents(intents, scene, size.width);
+
+    expect(newScene).to.eql([
+      _, x, _,
+      x, x, x,
+      _, _, _,
+      _, _, _,
+    ]);
+  });
 });
