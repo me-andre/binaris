@@ -10,13 +10,19 @@ const {
 
 const {
   buildFallIndents,
-} = require('../falling');
+  buildFallIndentsForGroup,
+} = require('../gravity');
 
 const {
   findGroupCenters,
   rotateCW,
   rotateCCW,
 } = require('../rotation');
+
+const {
+  moveLeft,
+  moveRight,
+} = require('../moving-aside');
 
 const {prettyPrintScene} = require('../util');
 
@@ -40,7 +46,7 @@ const groups = [
   // [1],
 ];
 
-describe('falling', () => {
+describe('physics', () => {
   it('can find {x, y} coordinates of a cell by its index', () => {
     expect(getCellCoordsFromIndex(1, size.width)).to.eql({x: 1, y: 0});
     expect(getCellCoordsFromIndex(2, size.width)).to.eql({x: 0, y: 1});
@@ -126,11 +132,11 @@ describe('falling', () => {
   it('applies intents to a scene', () => {
     const intents = buildFallIndents(scene, size.width);
     forbidOutOfBoundsIntents(intents, size);
-    forbidGroupIntents(intents, groups);
     collideSameValueIntents(intents, scene, size.width);
+    forbidGroupIntents(intents, groups);
     const {
       scene: newScene,
-    } = applyIntents(intents, scene, size.width);
+    } = applyIntents(intents, scene, groups, size.width);
 
     expect(newScene).to.eql([
       _, _,
@@ -155,13 +161,99 @@ describe('falling', () => {
 
     const intents = buildFallIndents(scene, size.width);
     forbidOutOfBoundsIntents(intents, size);
-    forbidGroupIntents(intents, groups);
     collideSameValueIntents(intents, scene, size.width);
+    forbidGroupIntents(intents, groups);
     const {
       conflicts,
-    } = applyIntents(intents, scene, size.width);
+    } = applyIntents(intents, scene, groups, size.width);
 
     expect(conflicts).to.eql([3, 5]);
+  });
+});
+
+describe('falling', () => {
+  it('is when a figure goes down until it hits the ground', () => {
+    let scene = [
+      _, x, x,
+      _, x, x,
+      _, _, _,
+      _, _, _,
+      _, _, _,
+    ];
+
+    const size = {
+      width: 3,
+      height: 5,
+    };
+
+    let groups = [
+      [1, 2, 4, 5],
+    ];
+
+    let intents;
+
+    while (true) {
+      intents = buildFallIndentsForGroup(scene, groups[0], size.width);
+      forbidOutOfBoundsIntents(intents, size);
+      collideSameValueIntents(intents, scene, size.width);
+      const isEveryPermitted = intents.every(({isPermitted}) => isPermitted);
+      // we know all the intents belong to the same group
+      if (isEveryPermitted) {
+        ( {scene, groups} = applyIntents(intents, scene, groups, size.width) );
+      } else {
+        break;
+      }
+    }
+
+    expect(scene).to.eql([
+      _, _, _,
+      _, _, _,
+      _, _, _,
+      _, x, x,
+      _, x, x,
+    ])
+  });
+
+  it('is when a figure goes down until it hits an obstacle', () => {
+    let scene = [
+      _, x, x,
+      _, x, x,
+      _, _, _,
+      _, _, _,
+      x, x, x,
+    ];
+
+    const size = {
+      width: 3,
+      height: 5,
+    };
+
+    let groups = [
+      [1, 2, 4, 5],
+    ];
+
+    let intents;
+
+    while (true) {
+      intents = buildFallIndentsForGroup(scene, groups[0], size.width);
+      forbidOutOfBoundsIntents(intents, size);
+      collideSameValueIntents(intents, scene, size.width);
+      const isEveryPermitted = intents.every(({isPermitted}) => isPermitted);
+      // we know all the intents belong to the same group
+      if (isEveryPermitted) {
+        ( {scene, groups} = applyIntents(intents, scene, groups, size.width) );
+      } else {
+        break;
+      }
+    }
+
+    expect(scene).to.eql([
+      _, _, _,
+      _, _, _,
+      _, x, x,
+      _, x, x,
+      x, x, x,
+    ])
   });
 });
 
@@ -198,11 +290,11 @@ describe('rotation', () => {
     const [center] = findGroupCenters(groups[0], size.width);
     const intents = rotateCW(groups[0], center, size.width);
     forbidOutOfBoundsIntents(intents, size);
-    forbidGroupIntents(intents, groups);
     collideSameValueIntents(intents, scene, size.width);
+    forbidGroupIntents(intents, groups);
     const {
       scene: newScene,
-    } = applyIntents(intents, scene, size.width);
+    } = applyIntents(intents, scene, groups, size.width);
 
     expect(newScene).to.eql([
       _, _, _,
@@ -216,11 +308,11 @@ describe('rotation', () => {
     const [center] = findGroupCenters(groups[0], size.width);
     const intents = rotateCCW(groups[0], center, size.width);
     forbidOutOfBoundsIntents(intents, size);
-    forbidGroupIntents(intents, groups);
     collideSameValueIntents(intents, scene, size.width);
+    forbidGroupIntents(intents, groups);
     const {
       scene: newScene,
-    } = applyIntents(intents, scene, size.width);
+    } = applyIntents(intents, scene, groups, size.width);
 
     expect(newScene).to.eql([
       _, x, _,
@@ -247,18 +339,17 @@ describe('rotation', () => {
 
     const groups = [
       [7, 12, 17, 22],
-      // [1],
     ];
 
     const centers = findGroupCenters(groups[0], size.width);
     const center = centers.find(({y}) => y === 2);
     const intents = rotateCW(groups[0], center, size.width);
     forbidOutOfBoundsIntents(intents, size);
-    forbidGroupIntents(intents, groups);
     collideSameValueIntents(intents, scene, size.width);
+    forbidGroupIntents(intents, groups);
     const {
       scene: newScene,
-    } = applyIntents(intents, scene, size.width);
+    } = applyIntents(intents, scene, groups, size.width);
 
     expect(newScene).to.eql([
       _, _, _, _, _,
@@ -285,7 +376,6 @@ describe('rotation', () => {
 
     const groups = [
       [1, 5, 9, 13],
-      // [1],
     ];
 
     const centers = findGroupCenters(groups[0], size.width);
@@ -296,9 +386,9 @@ describe('rotation', () => {
     for (center of centers) {
       const intents = rotateCW(groups[0], center, size.width);
       forbidOutOfBoundsIntents(intents, size);
-      forbidGroupIntents(intents, groups);
       collideSameValueIntents(intents, scene, size.width);
-      newScene = applyIntents(intents, scene, size.width).scene;
+      forbidGroupIntents(intents, groups);
+      newScene = applyIntents(intents, scene, groups, size.width).scene;
       if (intents.every(({isPermitted}) => isPermitted)) {
         break;
       }
@@ -312,5 +402,127 @@ describe('rotation', () => {
       x, x, x, x,
       _, _, _, _,
     ]);
+  });
+});
+
+describe('moving aside', () => {
+  it('moves left', () => {
+    const scene = [
+      _, x, _, _,
+      _, x, x, _,
+      _, x, _, _,
+      _, _, _, _,
+    ];
+
+    const size = {
+      width: 4,
+      height: 4,
+    };
+
+    const groups = [
+      [1, 5, 6, 9],
+    ];
+
+    const intents = moveLeft(groups[0], size.width);
+    forbidOutOfBoundsIntents(intents, size);
+    collideSameValueIntents(intents, scene, size.width);
+    const isEveryPermitted = intents.every(({isPermitted}) => isPermitted);
+    if (!isEveryPermitted) {
+      throw new Error(`can't move!`);
+    }
+    const {
+      scene: newScene,
+    } = applyIntents(intents, scene, groups, size.width);
+
+    expect(newScene).to.eql([
+      x, _, _, _,
+      x, x, _, _,
+      x, _, _, _,
+      _, _, _, _,
+    ]);
+  });
+
+  it('moves right', () => {
+    const scene = [
+      _, x, _, _,
+      _, x, x, _,
+      _, x, _, _,
+      _, _, _, _,
+    ];
+
+    const size = {
+      width: 4,
+      height: 4,
+    };
+
+    const groups = [
+      [1, 5, 6, 9],
+    ];
+
+    const intents = moveRight(groups[0], size.width);
+    forbidOutOfBoundsIntents(intents, size);
+    collideSameValueIntents(intents, scene, size.width);
+    const isEveryPermitted = intents.every(({isPermitted}) => isPermitted);
+    if (!isEveryPermitted) {
+      throw new Error(`can't move!`);
+    }
+    const {
+      scene: newScene,
+    } = applyIntents(intents, scene, groups, size.width);
+
+    expect(newScene).to.eql([
+      _, _, x, _,
+      _, _, x, x,
+      _, _, x, _,
+      _, _, _, _,
+    ]);
+  });
+
+  it('detects collisions of same-value cells', () => {
+    const scene = [
+      _, x, _, _,
+      _, x, x, _,
+      x, x, _, _,
+      x, _, _, _,
+    ];
+
+    const size = {
+      width: 4,
+      height: 4,
+    };
+
+    const groups = [
+      [1, 5, 6, 9],
+    ];
+
+    const intents = moveLeft(groups[0], size.width);
+    forbidOutOfBoundsIntents(intents, size);
+    collideSameValueIntents(intents, scene, size.width);
+    const isEveryPermitted = intents.every(({isPermitted}) => isPermitted);
+    expect(isEveryPermitted).to.be.false;
+  });
+
+  it('detects collisions with the stage bounds', () => {
+    const scene = [
+      _, _, x, _,
+      _, _, x, x,
+      _, _, x, _,
+      _, _, _, _,
+    ];
+
+    const size = {
+      width: 4,
+      height: 4,
+    };
+
+    const groups = [
+      [2, 6, 7, 10],
+    ];
+
+    const intents = moveRight(groups[0], size.width);
+    forbidOutOfBoundsIntents(intents, size);
+    collideSameValueIntents(intents, scene, size.width);
+    const isEveryPermitted = intents.every(({isPermitted}) => isPermitted);
+    expect(isEveryPermitted).to.be.false;
   });
 });

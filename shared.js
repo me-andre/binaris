@@ -40,7 +40,6 @@ function forbidGroupIntents(intents, cellGroups) {
   });
 }
 
-
 // an intent which target is of same value as its source is forbidden
 // unless an intent exists for that target which is
 // 1. not forbidden
@@ -75,22 +74,22 @@ function collideSameValueIntents(intents, scene, sceneWidth) {
   });
 }
 
-function applyIntents(intents, scene, sceneWidth) {
-  const indexedIntents = {};
+function applyIntents(intents, scene, groups, sceneWidth) {
+  const intentsIndexedByTarget = {};
   const conflicts = [];
   let permittedIntents = intents.filter(({isPermitted}) => isPermitted);
   permittedIntents.forEach((intent) => {
     const targetIndex = getCellIndexFromCoords(intent.targetCoords, sceneWidth);
-    const conflictingIntents = indexedIntents[targetIndex];
+    const conflictingIntents = intentsIndexedByTarget[targetIndex];
     if (!conflictingIntents) {
-      indexedIntents[targetIndex] = [intent];
+      intentsIndexedByTarget[targetIndex] = [intent];
     } else {
       conflictingIntents.push(intent);
     }
   });
-  for (const targetIndex in indexedIntents) {
-    if (indexedIntents[targetIndex].length > 1) {
-      indexedIntents[targetIndex].forEach((intent) => intent.isPermitted = false);
+  for (const targetIndex in intentsIndexedByTarget) {
+    if (intentsIndexedByTarget[targetIndex].length > 1) {
+      intentsIndexedByTarget[targetIndex].forEach((intent) => intent.isPermitted = false);
       conflicts.push(Number(targetIndex));
     }
   }
@@ -105,8 +104,14 @@ function applyIntents(intents, scene, sceneWidth) {
     const targetIndex = getCellIndexFromCoords(intent.targetCoords, sceneWidth);
     newScene[targetIndex] = cellValue;
   });
+  const newGroups = groups.map((cells) => cells.map((cellIndex) => {
+    // todo we already do this: forbidGroupIntents finds unmovable groups
+    const intent = permittedIntents.find(({sourceIndex}) => sourceIndex === cellIndex);
+    return intent ? getCellIndexFromCoords(intent.targetCoords, sceneWidth) : cellIndex;
+  }));
   return {
     scene: newScene,
+    groups: newGroups,
     conflicts,
   };
 }
