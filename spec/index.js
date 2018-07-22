@@ -146,6 +146,52 @@ describe('physics', () => {
     ])
   });
 
+  it('reassigns cells to new groups', () => {
+    const scene = [
+      _, x, x,
+      _, x, _,
+      _, x, _,
+      _, _, _,
+    ];
+
+    const groups = {
+      figure1: [1, 2, 4, 7],
+      [_]: [0, 3, 5, 6, 8, 9, 10, 11],
+    };
+
+    const size = {
+      width: 3,
+      height: 4,
+    };
+
+    const intents = buildFallIndents(scene, size.width);
+    forbidOutOfBoundsIntents(intents, size);
+    collideSameValueIntents(intents, scene, size.width);
+    forbidGroupIntents(intents, groups);
+    const {
+      scene: newScene,
+      groups: newGroups,
+    } = applyIntents(intents, scene, groups, size.width);
+
+    for (const groupName in newGroups) {
+      newGroups[groupName].sort((lIndex, rIndex) => lIndex - rIndex);
+    }
+
+    // prettyPrintScene()
+
+    expect(newScene).to.eql([
+      _, _, _,
+      _, x, x,
+      _, x, _,
+      _, x, _,
+    ]);
+
+    expect(newGroups).to.eql({
+      figure1: [4, 5, 7, 10],
+      [_]: [0, 1, 2, 3, 6, 8, 9, 11],
+    })
+  });
+
   it('detects conflicting intents', () => {
     const scene = [
       _, x,
@@ -186,14 +232,15 @@ describe('falling', () => {
       height: 5,
     };
 
-    let groups = [
-      [1, 2, 4, 5],
-    ];
+    let groups = {
+      figure1: [1, 2, 4, 5],
+      [_]: [0, 3, 6, 7, 8, 9, 10, 11, 12, 13, 14],
+    };
 
     let intents;
 
     while (true) {
-      intents = buildFallIndentsForGroup(scene, groups[0], size.width);
+      intents = buildFallIndentsForGroup(scene, groups.figure1, size.width);
       forbidOutOfBoundsIntents(intents, size);
       collideSameValueIntents(intents, scene, size.width);
       const isEveryPermitted = intents.every(({isPermitted}) => isPermitted);
@@ -228,14 +275,16 @@ describe('falling', () => {
       height: 5,
     };
 
-    let groups = [
-      [1, 2, 4, 5],
-    ];
+    let groups = {
+      figure1: [1, 2, 4, 5],
+      [_]: [0, 3, 6, 7, 8, 9, 10, 11],
+      [x]: [12, 13, 14],
+    };
 
     let intents;
 
     while (true) {
-      intents = buildFallIndentsForGroup(scene, groups[0], size.width);
+      intents = buildFallIndentsForGroup(scene, groups.figure1, size.width);
       forbidOutOfBoundsIntents(intents, size);
       collideSameValueIntents(intents, scene, size.width);
       const isEveryPermitted = intents.every(({isPermitted}) => isPermitted);

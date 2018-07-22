@@ -74,7 +74,7 @@ function findGroupCenters(group, sceneWidth) {
   return centers;
 }
 
-function rotate(group, groupCenter, sceneWidth, rotationMatrix) {
+function buildRotationIntents(group, groupCenter, sceneWidth, rotationMatrix) {
   return group.map((cellIndex) => {
     // consider mapping cellIndices to cellCoords at the toplevel of rotation
     const {x, y} = getCellCoordsFromIndex(cellIndex, sceneWidth);
@@ -94,11 +94,11 @@ function rotate(group, groupCenter, sceneWidth, rotationMatrix) {
 }
 
 function rotateCW(group, groupCenter, sceneWidth) {
-  return rotate(group, groupCenter, sceneWidth, rotationMatrix.cw);
+  return buildRotationIntents(group, groupCenter, sceneWidth, rotationMatrix.cw);
 }
 
 function rotateCCW(group, groupCenter, sceneWidth) {
-  return rotate(group, groupCenter, sceneWidth, rotationMatrix.ccw);
+  return buildRotationIntents(group, groupCenter, sceneWidth, rotationMatrix.ccw);
 }
 
 module.exports = {

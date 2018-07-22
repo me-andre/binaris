@@ -1,3 +1,5 @@
+const {find, mapValues, pull} = require('lodash');
+
 function getCellCoordsFromIndex(cellIndex, sceneWidth) {
   const y = Math.floor(cellIndex / sceneWidth);
   const x = cellIndex % sceneWidth;
@@ -29,7 +31,7 @@ function forbidGroupIntents(intents, cellGroups) {
 
   intents.forEach((intent) => {
     if (intent.isPermitted) {
-      const group = cellGroups.find((group) => group.includes(intent.sourceIndex));
+      const group = find(cellGroups, (group) => group.includes(intent.sourceIndex));
       if (group) {
         const hasForbiddenIndent = forbiddenIntents.some(({sourceIndex}) => group.includes(sourceIndex));
         if (hasForbiddenIndent) {
@@ -104,11 +106,28 @@ function applyIntents(intents, scene, groups, sceneWidth) {
     const targetIndex = getCellIndexFromCoords(intent.targetCoords, sceneWidth);
     newScene[targetIndex] = cellValue;
   });
-  const newGroups = groups.map((cells) => cells.map((cellIndex) => {
+
+  // todo: shitty code goes below
+  const newGroups = mapValues(groups, (cells) => cells.map((cellIndex) => {
     // todo we already do this: forbidGroupIntents finds unmovable groups
     const intent = permittedIntents.find(({sourceIndex}) => sourceIndex === cellIndex);
     return intent ? getCellIndexFromCoords(intent.targetCoords, sceneWidth) : cellIndex;
   }));
+  permittedIntents.forEach((intent) => {
+    const cellValue = scene[intent.sourceIndex];
+    const counterValue = oppositeValues[cellValue];
+    if (newGroups[counterValue]) {
+      newGroups[counterValue].push(intent.sourceIndex);
+    }
+  });
+  permittedIntents.forEach((intent) => {
+    const targetIndex = getCellIndexFromCoords(intent.targetCoords, sceneWidth);
+    for (const cellValue in oppositeValues) {
+      pull(newGroups[cellValue], targetIndex);
+    }
+  });
+  // eof shitty code
+
   return {
     scene: newScene,
     groups: newGroups,
