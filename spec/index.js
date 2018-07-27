@@ -1,5 +1,7 @@
 const {expect} = require('chai');
 
+const {pickBy} = require('lodash');
+
 const {
   getCellCoordsFromIndex,
   forbidOutOfBoundsIntents,
@@ -217,6 +219,152 @@ describe('physics', () => {
   });
 });
 
+describe('gravity', () => {
+  it('lands figures on the background 1', () => {
+    const scene = [
+      _, _, _, _,
+      _, x, x, _,
+      _, x, x, _,
+      _, _, _, _,
+      x, x, x, _,
+      x, x, _, _,
+      x, x, x, _,
+      x, x, x, x,
+    ];
+
+    const size = {
+      width: 4,
+      height: 8,
+    };
+
+    const groups = {
+      figure1: [5, 6, 9, 10],
+      figure0: [19, 22, 23, 27],
+      [x]: [16, 17, 18, 20, 21, 24, 25, 26, 28, 29, 30, 31],
+      [_]: [0, 1, 2, 3, 4, 7, 8, 11, 12, 13, 14, 15],
+    };
+
+    const intents = buildFallIndents(scene, size.width);
+    forbidOutOfBoundsIntents(intents, size);
+    collideSameValueIntents(intents, scene, size.width);
+    forbidGroupIntents(intents, groups);
+    const {
+      scene: newScene,
+      groups: newGroups,
+    } = applyIntents(intents, scene, groups, size.width);
+
+    {
+      const landedFigures = pickBy(groups, (cellIndices, groupName) => {
+        if (groupName == _ || groupName == x) {
+          return false;
+        }
+        return intents.some(({sourceIndex, isPermitted}) => !isPermitted && cellIndices.includes(sourceIndex));
+      });
+
+      for (const name in landedFigures) {
+        const [memberIndex] = landedFigures[name];
+        const value = scene[memberIndex];
+        newGroups[value].push(...landedFigures[name]);
+        newGroups[name] = [];
+      }
+    }
+
+    expect(newScene).to.eql([
+      _, _, _, _,
+      _, _, _, _,
+      _, x, x, _,
+      _, x, x, _,
+      x, x, x, _,
+      x, x, _, _,
+      x, x, x, _,
+      x, x, x, x,
+    ]);
+
+    for (const name in newGroups) {
+      newGroups[name].sort((lIndex, rIndex) => lIndex - rIndex);
+    }
+
+    expect(newGroups).to.eql({
+      figure1: [9, 10, 13, 14],
+      figure0: [],
+      [x]: [16, 17, 18, 20, 21, 24, 25, 26, 28, 29, 30, 31],
+      [_]: [0, 1, 2, 3, 4, 5, 6, 7, 8, 11, 12, 15, 19, 22, 23, 27],
+    });
+  });
+
+  it('lands figures on the background 2', () => {
+    const scene = [
+      _, _, _, _,
+      _, _, _, _,
+      _, x, x, _,
+      _, x, x, _,
+      x, x, x, _,
+      x, x, _, _,
+      x, x, x, _,
+      x, x, x, x,
+    ];
+
+    const size = {
+      width: 4,
+      height: 8,
+    };
+
+    const groups = {
+      figure1: [9, 10, 13, 14],
+      figure0: [],
+      [x]: [16, 17, 18, 20, 21, 24, 25, 26, 28, 29, 30, 31],
+      [_]: [0, 1, 2, 3, 4, 5, 6, 7, 8, 11, 12, 15, 19, 22, 23, 27],
+    };
+
+    const intents = buildFallIndents(scene, size.width);
+    forbidOutOfBoundsIntents(intents, size);
+    collideSameValueIntents(intents, scene, size.width);
+    forbidGroupIntents(intents, groups);
+    const {
+      scene: newScene,
+      groups: newGroups,
+    } = applyIntents(intents, scene, groups, size.width);
+
+    {
+      const landedFigures = pickBy(groups, (cellIndices, groupName) => {
+        if (groupName == _ || groupName == x) {
+          return false;
+        }
+        return intents.some(({sourceIndex, isPermitted}) => !isPermitted && cellIndices.includes(sourceIndex));
+      });
+
+      for (const name in landedFigures) {
+        const [memberIndex] = landedFigures[name];
+        const value = scene[memberIndex];
+        newGroups[value].push(...landedFigures[name]);
+        newGroups[name] = [];
+      }
+    }
+
+    expect(newScene).to.eql([
+      _, _, _, _,
+      _, _, _, _,
+      _, x, x, _,
+      _, x, x, _,
+      x, x, x, _,
+      x, x, _, _,
+      x, x, x, _,
+      x, x, x, x,
+    ]);
+
+    for (const name in newGroups) {
+      newGroups[name].sort((lIndex, rIndex) => lIndex - rIndex);
+    }
+
+    expect(newGroups).to.eql({
+      figure1: [],
+      figure0: [],
+      [x]: [9, 10, 13, 14, 16, 17, 18, 20, 21, 24, 25, 26, 28, 29, 30, 31],
+      [_]: [0, 1, 2, 3, 4, 5, 6, 7, 8, 11, 12, 15, 19, 22, 23, 27],
+    });
+  });
+});
+
 describe('falling', () => {
   it('is when a figure goes down until it hits the ground', () => {
     let scene = [
@@ -258,7 +406,7 @@ describe('falling', () => {
       _, _, _,
       _, x, x,
       _, x, x,
-    ])
+    ]);
   });
 
   it('is when a figure goes down until it hits an obstacle', () => {
@@ -302,7 +450,55 @@ describe('falling', () => {
       _, x, x,
       _, x, x,
       x, x, x,
-    ])
+    ]);
+  });
+
+  it('lands the figure on the background', () => {
+    let scene = [
+      _, x, x,
+      _, x, x,
+      _, _, _,
+      _, _, _,
+      x, x, x,
+    ];
+
+    const size = {
+      width: 3,
+      height: 5,
+    };
+
+    let groups = {
+      figure1: [1, 2, 4, 5],
+      [_]: [0, 3, 6, 7, 8, 9, 10, 11],
+      [x]: [12, 13, 14],
+    };
+
+    let intents;
+
+    while (true) {
+      intents = buildFallIndentsForGroup(scene, groups.figure1, size.width);
+      forbidOutOfBoundsIntents(intents, size);
+      collideSameValueIntents(intents, scene, size.width);
+      const isEveryPermitted = intents.every(({isPermitted}) => isPermitted);
+      // we know all the intents belong to the same group
+      if (isEveryPermitted) {
+        ( {scene, groups} = applyIntents(intents, scene, groups, size.width) );
+      } else {
+        groups[x].push(...groups.figure1);
+        groups.figure1 = [];
+        break;
+      }
+    }
+
+    for (const name in groups) {
+      groups[name].sort((lIndex, rIndex) => lIndex - rIndex);
+    }
+
+    expect(groups).to.eql({
+      figure1: [],
+      [_]: [0, 1, 2, 3, 4, 5, 6, 9],
+      [x]: [7, 8, 10, 11, 12, 13, 14],
+    });
   });
 });
 
