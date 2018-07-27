@@ -26,6 +26,12 @@ const {
   moveRight,
 } = require('../moving-aside');
 
+const {
+  findFilledRows,
+  swapRows,
+  splitBase,
+} = require('../swap-rows');
+
 const {prettyPrintScene} = require('../util');
 
 const x = 1;
@@ -499,6 +505,152 @@ describe('falling', () => {
       [_]: [0, 1, 2, 3, 4, 5, 6, 9],
       [x]: [7, 8, 10, 11, 12, 13, 14],
     });
+  });
+
+  it('swaps "black" filled rows', () => {
+    let scene = [
+      _, x, x,
+      _, x, x,
+      _, _, _,
+      x, _, _,
+      x, x, x,
+    ];
+
+    const size = {
+      width: 3,
+      height: 5,
+    };
+
+    let groups = {
+      figure1: [1, 2, 4, 5],
+      [_]: [0, 3, 6, 7, 8, 10, 11],
+      [x]: [9, 12, 13, 14],
+    };
+
+    let lastStepIntents;
+
+    while (true) {
+      const stepIntents = buildFallIndentsForGroup(scene, groups.figure1, size.width);
+      forbidOutOfBoundsIntents(stepIntents, size);
+      collideSameValueIntents(stepIntents, scene, size.width);
+      const isEveryPermitted = stepIntents.every(({isPermitted}) => isPermitted);
+      // we know all the intents belong to the same group
+      if (isEveryPermitted) {
+        ( {scene, groups} = applyIntents(stepIntents, scene, groups, size.width) );
+        lastStepIntents = stepIntents;
+      } else {
+        groups[x].push(...groups.figure1);
+        groups.figure1 = [];
+        break;
+      }
+    }
+
+    const filledRows = findFilledRows(lastStepIntents, scene, size.width);
+    if (filledRows.length > 0) {
+      scene = swapRows(filledRows, scene, size.width);
+      const split = splitBase(filledRows, scene, groups, size);
+      if (split) {
+        groups = {
+          ...groups,
+          ...split,
+        };
+        while (true) {
+          const stepIntents = buildFallIndentsForGroup(scene, groups.figure1, size.width);
+          forbidOutOfBoundsIntents(stepIntents, size);
+          collideSameValueIntents(stepIntents, scene, size.width);
+          const isEveryPermitted = stepIntents.every(({isPermitted}) => isPermitted);
+          // we know all the intents belong to the same group
+          if (isEveryPermitted) {
+            ( {scene, groups} = applyIntents(stepIntents, scene, groups, size.width) );
+          } else {
+            groups[x].push(...groups.figure1);
+            groups.figure1 = [];
+            break;
+          }
+        }
+      }
+    }
+
+    expect(scene).to.eql([
+      _, _, _,
+      _, _, _,
+      _, _, _,
+      _, x, x,
+      x, x, x,
+    ])
+  });
+
+  it('swaps "white" filled rows', () => {
+    let scene = [
+      _, x, x,
+      _, x, x,
+      x, x, _,
+      x, _, _,
+      x, x, _,
+    ];
+
+    const size = {
+      width: 3,
+      height: 5,
+    };
+
+    let groups = {
+      figure0: [8, 10, 11, 14],
+      [_]: [0, 3],
+      [x]: [1, 2, 4, 5, 6, 7, 9, 12, 13],
+    };
+
+    let lastStepIntents;
+
+    while (true) {
+      const stepIntents = buildFallIndentsForGroup(scene, groups.figure0, size.width);
+      forbidOutOfBoundsIntents(stepIntents, size);
+      collideSameValueIntents(stepIntents, scene, size.width);
+      const isEveryPermitted = stepIntents.every(({isPermitted}) => isPermitted);
+      // we know all the intents belong to the same group
+      if (isEveryPermitted) {
+        ( {scene, groups} = applyIntents(stepIntents, scene, groups, size.width) );
+        lastStepIntents = stepIntents;
+      } else {
+        groups[_].push(...groups.figure0);
+        groups.figure0 = [];
+        break;
+      }
+    }
+
+    const filledRows = findFilledRows(lastStepIntents, scene, size.width);
+    if (filledRows.length > 0) {
+      scene = swapRows(filledRows, scene, size.width);
+      const split = splitBase(filledRows, scene, groups, size);
+      if (split) {
+        groups = {
+          ...groups,
+          ...split,
+        };
+        while (true) {
+          const stepIntents = buildFallIndentsForGroup(scene, groups.figure0, size.width);
+          forbidOutOfBoundsIntents(stepIntents, size);
+          collideSameValueIntents(stepIntents, scene, size.width);
+          const isEveryPermitted = stepIntents.every(({isPermitted}) => isPermitted);
+          // we know all the intents belong to the same group
+          if (isEveryPermitted) {
+            ( {scene, groups} = applyIntents(stepIntents, scene, groups, size.width) );
+          } else {
+            groups[_].push(...groups.figure0);
+            groups.figure0 = [];
+            break;
+          }
+        }
+      }
+    }
+
+    expect(scene).to.eql([
+      _, x, _,
+      x, x, _,
+      x, x, x,
+      x, x, x,
+      x, x, x,
+    ])
   });
 });
 

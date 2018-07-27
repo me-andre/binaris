@@ -1,4 +1,5 @@
 const {find, mapValues, pull} = require('lodash');
+const oppositeValues = require('./counter-values');
 
 function getCellCoordsFromIndex(cellIndex, sceneWidth) {
   const y = Math.floor(cellIndex / sceneWidth);
@@ -9,11 +10,6 @@ function getCellCoordsFromIndex(cellIndex, sceneWidth) {
 function getCellIndexFromCoords({x, y}, sceneWidth) {
   return y * sceneWidth + x;
 }
-
-const oppositeValues = {
-  1: 0,
-  0: 1,
-};
 
 // better name, not forbit or permit, something like control, filter or validate
 function forbidOutOfBoundsIntents(intents, {width, height}) {
