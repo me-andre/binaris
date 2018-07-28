@@ -1,7 +1,5 @@
 const {expect} = require('chai');
 
-const {pickBy} = require('lodash');
-
 const {
   getCellCoordsFromIndex,
   forbidOutOfBoundsIntents,
@@ -24,6 +22,10 @@ const {
   moveLeft,
   moveRight,
 } = require('../moving-aside');
+
+const {
+  fallStep,
+} = require('../fall-step');
 
 const {
   drop,
@@ -247,30 +249,10 @@ describe('gravity', () => {
       [_]: [0, 1, 2, 3, 4, 7, 8, 11, 12, 13, 14, 15],
     };
 
-    const intents = buildFallIndents(scene, size.width);
-    forbidOutOfBoundsIntents(intents, size);
-    collideSameValueIntents(intents, scene, size.width);
-    forbidGroupIntents(intents, groups);
     const {
       scene: newScene,
       groups: newGroups,
-    } = applyIntents(intents, scene, groups, size.width);
-
-    {
-      const landedFigures = pickBy(groups, (cellIndices, groupName) => {
-        if (groupName == _ || groupName == x) {
-          return false;
-        }
-        return intents.some(({sourceIndex, isPermitted}) => !isPermitted && cellIndices.includes(sourceIndex));
-      });
-
-      for (const name in landedFigures) {
-        const [memberIndex] = landedFigures[name];
-        const value = scene[memberIndex];
-        newGroups[value].push(...landedFigures[name]);
-        newGroups[name] = [];
-      }
-    }
+    } = fallStep({scene, groups, size});
 
     expect(newScene).to.eql([
       _, _, _, _,
@@ -319,30 +301,10 @@ describe('gravity', () => {
       [_]: [0, 1, 2, 3, 4, 5, 6, 7, 8, 11, 12, 15, 19, 22, 23, 27],
     };
 
-    const intents = buildFallIndents(scene, size.width);
-    forbidOutOfBoundsIntents(intents, size);
-    collideSameValueIntents(intents, scene, size.width);
-    forbidGroupIntents(intents, groups);
     const {
       scene: newScene,
       groups: newGroups,
-    } = applyIntents(intents, scene, groups, size.width);
-
-    {
-      const landedFigures = pickBy(groups, (cellIndices, groupName) => {
-        if (groupName == _ || groupName == x) {
-          return false;
-        }
-        return intents.some(({sourceIndex, isPermitted}) => !isPermitted && cellIndices.includes(sourceIndex));
-      });
-
-      for (const name in landedFigures) {
-        const [memberIndex] = landedFigures[name];
-        const value = scene[memberIndex];
-        newGroups[value].push(...landedFigures[name]);
-        newGroups[name] = [];
-      }
-    }
+    } = fallStep({scene, groups, size});
 
     expect(newScene).to.eql([
       _, _, _, _,
