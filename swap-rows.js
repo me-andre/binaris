@@ -1,4 +1,7 @@
-const {without} = require('lodash');
+const {
+  without,
+  difference,
+} = require('lodash');
 const counterValues = require('./counter-values');
 const {getCellCoordsFromIndex} = require('./shared');
 
@@ -35,16 +38,28 @@ function findFilledRows(rowIndices, scene, sceneWidth) {
   return completedRows;
 }
 
-function swapRows(rowIndices, scene, sceneWidth) {
-  const newScene = scene.slice();
+function swapRows(rowIndices, scene, groups, sceneWidth) {
+  const newScene = [...scene];
+  const newGroups = {...groups};
+  const transfers = {0: [], 1: []};
   for (const y of rowIndices) {
     for (let x = 0; x < sceneWidth; x++) {
       const cellIndex = y * sceneWidth + x;
       const cellValue = scene[cellIndex];
-      newScene[cellIndex] = counterValues[cellValue];
+      const swappedValue = counterValues[cellValue];
+      newScene[cellIndex] = swappedValue;
+      transfers[swappedValue].push(cellIndex);
     }
   }
-  return newScene;
+  for (const cellValueString in transfers) {
+    const prevValue = counterValues[cellValueString];
+    newGroups[cellValueString] = difference(groups[cellValueString], transfers[prevValue]);
+    newGroups[cellValueString].push(...transfers[cellValueString]);
+  }
+  return {
+    scene: newScene,
+    groups: newGroups,
+  };
 }
 
 function splitBase(gapRowIndices, scene, groups, {width, height}) {
@@ -59,7 +74,7 @@ function splitBase(gapRowIndices, scene, groups, {width, height}) {
       const {y} = getCellCoordsFromIndex(cellIndex, width);
       return y < edgeRowIndex;
     });
-    const base = without(groups[cellValue], ...figure);
+    const base = without(groups[cellValue], ...figure);// diff
     return {
       figure1: figure,
       1: base,

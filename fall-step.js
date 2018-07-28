@@ -67,7 +67,12 @@ function fallStep(state) {
     for (const groupName in affectedRowIndicesByFigure) {
       const filledRows = findFilledRows(affectedRowIndicesByFigure[groupName], newScene, size.width);
       if (filledRows.length > 0) {
-        newScene = swapRows(filledRows, newScene, size.width);
+        (
+          {
+            scene: newScene,
+            groups: newGroups,
+          } = swapRows(filledRows, newScene, newGroups, size.width)
+        );
         const split = splitBase(filledRows, newScene, newGroups, size);
         if (split) {
           newGroups = {

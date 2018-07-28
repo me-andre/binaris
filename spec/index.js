@@ -328,6 +328,130 @@ describe('gravity', () => {
       [_]: [0, 1, 2, 3, 4, 5, 6, 7, 8, 11, 12, 15, 19, 22, 23, 27],
     });
   });
+
+  it('swaps "black" filled rows', () => {
+    let scene = [
+      _, _, _,
+      _, x, x,
+      x, x, x,
+      x, x, x,
+    ];
+
+    const size = {
+      width: 3,
+      height: 4,
+    };
+
+    const groups = {
+      figure1: [4, 5, 7, 8],
+      [_]: [0, 1, 2, 3],
+      [x]: [6, 9, 10, 11],
+    };
+
+    ( {scene} = fallStep({scene, groups, size}) );
+
+    expect(scene).to.eql([
+      _, _, _,
+      _, _, _,
+      _, x, x,
+      x, x, x,
+    ]);
+  });
+
+  it('swaps "white" filled rows', () => {
+    let scene = [
+      _, x, _,
+      _, _, _,
+      x, x, _,
+      x, x, x,
+    ];
+
+    const size = {
+      width: 3,
+      height: 4,
+    };
+
+    const groups = {
+      figure0: [2, 4, 5, 8],
+      [_]: [0, 3],
+      [x]: [1, 6, 7, 9, 10, 11],
+    };
+
+    ( {scene} = fallStep({scene, groups, size}) );
+
+    expect(scene).to.eql([
+      _, x, _,
+      x, x, _,
+      x, x, x,
+      x, x, x,
+    ]);
+  });
+
+  it('handles groups after a swap', () => {
+    const scene = [
+      _, x, _,
+      _, _, _,
+      x, x, _,
+      x, x, x,
+    ];
+
+    const size = {
+      width: 3,
+      height: 4,
+    };
+
+    let groups = {
+      figure0: [2, 4, 5, 8],
+      [_]: [0, 3],
+      [x]: [1, 6, 7, 9, 10, 11],
+    };
+
+    ( {groups} = fallStep({scene, groups, size}) );
+
+    for (const name in groups) {
+      groups[name].sort((lIndex, rIndex) => lIndex - rIndex);
+    }
+
+    expect(groups).to.eql({
+      figure0: [],
+      [_]: [0, 2, 5],
+      [x]: [1, 3, 4, 6, 7, 8, 9, 10, 11],
+    });
+  });
+
+  xit('swaps both filled rows', () => {
+    // todo 2b defined
+
+    let scene = [
+      _, _, _,
+      _, _, _,
+      x, x, x,
+      x, x, x,
+    ];
+
+    const size = {
+      width: 3,
+      height: 4,
+    };
+
+    const groups = {
+      figure1: [6, 9],
+      figure0: [2, 5],
+      [_]: [0, 1, 3, 4],
+      [x]: [7, 8, 10, 11],
+    };
+
+    ( {scene} = fallStep({scene, groups, size}) );
+
+    prettyPrintScene(scene, size);
+
+    expect(scene).to.eql([
+      x, x, x,
+      x, x, x,
+      _, _, _,
+      _, _, _,
+    ]);
+  });
 });
 
 describe('falling', () => {

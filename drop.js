@@ -28,7 +28,7 @@ function drop({scene, groups, size}, groupName) {
 
   const filledRows = findFilledRows(affectedRowIndices, scene, size.width);
   if (filledRows.length > 0) {
-    scene = swapRows(filledRows, scene, size.width);
+    ( {scene, groups} = swapRows(filledRows, scene, groups, size.width) );
     const split = splitBase(filledRows, scene, groups, size);
     if (split) {
       groups = {
