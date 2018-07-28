@@ -1,6 +1,10 @@
-const {pickBy} = require('lodash');
+const {
+  pickBy,
+  mapValues,
+} = require('lodash');
 
 const {
+  getCellCoordsFromIndex,
   forbidOutOfBoundsIntents,
   forbidGroupIntents,
   collideSameValueIntents,
@@ -10,6 +14,16 @@ const {
 const {
   buildFallIndents,
 } = require('./gravity');
+
+const {
+  findFilledRows,
+  swapRows,
+  splitBase,
+} = require('./swap-rows');
+
+const {
+  fall,
+} = require('./drop');
 
 module.exports = {
   fallStep,
@@ -22,7 +36,7 @@ function fallStep(state) {
   forbidOutOfBoundsIntents(intents, size);
   collideSameValueIntents(intents, scene, size.width);
   forbidGroupIntents(intents, groups);
-  const {
+  let {
     scene: newScene,
     groups: newGroups,
     conflicts,
@@ -38,12 +52,42 @@ function fallStep(state) {
       return intents.some(({sourceIndex, isPermitted}) => !isPermitted && cellIndices.includes(sourceIndex));
     });
 
+    const affectedRowIndicesByFigure = mapValues(landedFigures, (cellIndices) => cellIndices.map((cellIndex) => {
+      const {y} = getCellCoordsFromIndex(cellIndex, size.width);
+      return y;
+    }));
+
     for (const name in landedFigures) {
       const [memberIndex] = landedFigures[name];
       const value = scene[memberIndex];
       newGroups[value].push(...landedFigures[name]);
       newGroups[name] = [];
     }
+
+    for (const groupName in affectedRowIndicesByFigure) {
+      const filledRows = findFilledRows(affectedRowIndicesByFigure[groupName], newScene, size.width);
+      if (filledRows.length > 0) {
+        newScene = swapRows(filledRows, newScene, size.width);
+        const split = splitBase(filledRows, newScene, newGroups, size);
+        if (split) {
+          newGroups = {
+            ...newGroups,
+            ...split,
+          };
+          (
+            {
+              scene: newScene,
+              groups: newGroups,
+            } = fall({
+              scene: newScene,
+              groups: newGroups,
+              size,
+            }, groupName)
+          );
+        }
+      }
+    }
+
   }
 
   return {

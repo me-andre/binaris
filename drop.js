@@ -15,6 +15,7 @@ const {
 } = require('./swap-rows');
 
 module.exports = {
+  fall,
   drop,
 };
 
@@ -23,7 +24,9 @@ function drop({scene, groups, size}, groupName) {
 
   ( {scene, groups, lastStepIntents} = fall({scene, groups, size}, groupName) );
 
-  const filledRows = findFilledRows(lastStepIntents, scene, size.width);
+  const affectedRowIndices = lastStepIntents.map(({targetCoords}) => targetCoords.y);
+
+  const filledRows = findFilledRows(affectedRowIndices, scene, size.width);
   if (filledRows.length > 0) {
     scene = swapRows(filledRows, scene, size.width);
     const split = splitBase(filledRows, scene, groups, size);

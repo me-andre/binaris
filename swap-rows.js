@@ -8,11 +8,11 @@ module.exports = {
   splitBase,
 };
 
-function findFilledRows(intents, scene, sceneWidth) {
+function findFilledRows(rowIndices, scene, sceneWidth) {
   const checkedRows = [];
   const completedRows = [];
 
-  for (const {targetCoords: {y}} of intents) {
+  for (const y of rowIndices) {
     if (checkedRows.includes(y)) {
       continue;
     }
