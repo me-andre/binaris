@@ -7,7 +7,6 @@ const {
 
 const {
   buildFallIndents,
-  buildFallIndentsForGroup,
 } = require('../gravity');
 
 const {
@@ -20,6 +19,10 @@ const {
   moveLeft,
   moveRight,
 } = require('../moving-aside');
+
+const {
+  drop,
+} = require('../drop');
 
 module.exports = {
   Game,
@@ -155,22 +158,12 @@ function moveAside(groupName, moveFunction) {
 }
 
 g.drop = function (groupName) {
+  const {
+    scene,
+    groups,
+  } = drop(this, groupName);
+
   const {size} = this;
-
-  let {scene, groups} = this;
-
-  while (true) {
-    const intents = buildFallIndentsForGroup(scene, groups[groupName], size.width);
-    forbidOutOfBoundsIntents(intents, size);
-    collideSameValueIntents(intents, scene, size.width);
-    const isEveryPermitted = intents.every(({isPermitted}) => isPermitted);
-    // we know all the intents belong to the same group
-    if (isEveryPermitted) {
-      ( {scene, groups} = applyIntents(intents, scene, groups, size.width) );
-    } else {
-      break;
-    }
-  }
 
   const game = new Game({scene, groups, size});
 
