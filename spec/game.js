@@ -6,10 +6,6 @@ const {
 } = require('../shared');
 
 const {
-  buildFallIndents,
-} = require('../gravity');
-
-const {
   findGroupCenters,
   rotateCW,
   rotateCCW,
@@ -19,6 +15,10 @@ const {
   moveLeft,
   moveRight,
 } = require('../moving-aside');
+
+const {
+  fallStep,
+} = require('../fall-step');
 
 const {
   drop,
@@ -38,15 +38,13 @@ const g = Game.prototype;
 
 g.tick = function () {
   const {scene, size, groups} = this;
-  const intents = buildFallIndents(scene, size.width);
-  forbidOutOfBoundsIntents(intents, size);
-  collideSameValueIntents(intents, scene, size.width);
-  forbidGroupIntents(intents, groups);
+
   const {
     scene: newScene,
     conflicts,
     groups: newGroups,
-  } = applyIntents(intents, scene, groups, size.width);
+  } = fallStep({scene, groups, size});
+
   if (conflicts.length > 0) {
     return {
       type: 'conflict',
