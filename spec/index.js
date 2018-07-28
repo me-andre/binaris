@@ -12,7 +12,6 @@ const {
 
 const {
   buildFallIndents,
-  buildFallIndentsForGroup,
 } = require('../gravity');
 
 const {
@@ -27,10 +26,8 @@ const {
 } = require('../moving-aside');
 
 const {
-  findFilledRows,
-  swapRows,
-  splitBase,
-} = require('../swap-rows');
+  drop,
+} = require('../drop');
 
 const {prettyPrintScene} = require('../util');
 
@@ -386,25 +383,13 @@ describe('falling', () => {
       height: 5,
     };
 
-    let groups = {
+    const groups = {
       figure1: [1, 2, 4, 5],
       [_]: [0, 3, 6, 7, 8, 9, 10, 11, 12, 13, 14],
+      [x]: [],
     };
 
-    let intents;
-
-    while (true) {
-      intents = buildFallIndentsForGroup(scene, groups.figure1, size.width);
-      forbidOutOfBoundsIntents(intents, size);
-      collideSameValueIntents(intents, scene, size.width);
-      const isEveryPermitted = intents.every(({isPermitted}) => isPermitted);
-      // we know all the intents belong to the same group
-      if (isEveryPermitted) {
-        ( {scene, groups} = applyIntents(intents, scene, groups, size.width) );
-      } else {
-        break;
-      }
-    }
+    ( {scene} = drop({scene, groups, size}, 'figure1') );
 
     expect(scene).to.eql([
       _, _, _,
@@ -429,26 +414,13 @@ describe('falling', () => {
       height: 5,
     };
 
-    let groups = {
+    const groups = {
       figure1: [1, 2, 4, 5],
       [_]: [0, 3, 6, 7, 8, 9, 10, 11],
       [x]: [12, 13, 14],
     };
 
-    let intents;
-
-    while (true) {
-      intents = buildFallIndentsForGroup(scene, groups.figure1, size.width);
-      forbidOutOfBoundsIntents(intents, size);
-      collideSameValueIntents(intents, scene, size.width);
-      const isEveryPermitted = intents.every(({isPermitted}) => isPermitted);
-      // we know all the intents belong to the same group
-      if (isEveryPermitted) {
-        ( {scene, groups} = applyIntents(intents, scene, groups, size.width) );
-      } else {
-        break;
-      }
-    }
+    ( {scene} = drop({scene, groups, size}, 'figure1') );
 
     expect(scene).to.eql([
       _, _, _,
@@ -460,7 +432,7 @@ describe('falling', () => {
   });
 
   it('lands the figure on the background', () => {
-    let scene = [
+    const scene = [
       _, x, x,
       _, x, x,
       _, _, _,
@@ -479,22 +451,7 @@ describe('falling', () => {
       [x]: [12, 13, 14],
     };
 
-    let intents;
-
-    while (true) {
-      intents = buildFallIndentsForGroup(scene, groups.figure1, size.width);
-      forbidOutOfBoundsIntents(intents, size);
-      collideSameValueIntents(intents, scene, size.width);
-      const isEveryPermitted = intents.every(({isPermitted}) => isPermitted);
-      // we know all the intents belong to the same group
-      if (isEveryPermitted) {
-        ( {scene, groups} = applyIntents(intents, scene, groups, size.width) );
-      } else {
-        groups[x].push(...groups.figure1);
-        groups.figure1 = [];
-        break;
-      }
-    }
+    ( {groups} = drop({scene, groups, size}, 'figure1') );
 
     for (const name in groups) {
       groups[name].sort((lIndex, rIndex) => lIndex - rIndex);
@@ -521,55 +478,13 @@ describe('falling', () => {
       height: 5,
     };
 
-    let groups = {
+    const groups = {
       figure1: [1, 2, 4, 5],
       [_]: [0, 3, 6, 7, 8, 10, 11],
       [x]: [9, 12, 13, 14],
     };
 
-    let lastStepIntents;
-
-    while (true) {
-      const stepIntents = buildFallIndentsForGroup(scene, groups.figure1, size.width);
-      forbidOutOfBoundsIntents(stepIntents, size);
-      collideSameValueIntents(stepIntents, scene, size.width);
-      const isEveryPermitted = stepIntents.every(({isPermitted}) => isPermitted);
-      // we know all the intents belong to the same group
-      if (isEveryPermitted) {
-        ( {scene, groups} = applyIntents(stepIntents, scene, groups, size.width) );
-        lastStepIntents = stepIntents;
-      } else {
-        groups[x].push(...groups.figure1);
-        groups.figure1 = [];
-        break;
-      }
-    }
-
-    const filledRows = findFilledRows(lastStepIntents, scene, size.width);
-    if (filledRows.length > 0) {
-      scene = swapRows(filledRows, scene, size.width);
-      const split = splitBase(filledRows, scene, groups, size);
-      if (split) {
-        groups = {
-          ...groups,
-          ...split,
-        };
-        while (true) {
-          const stepIntents = buildFallIndentsForGroup(scene, groups.figure1, size.width);
-          forbidOutOfBoundsIntents(stepIntents, size);
-          collideSameValueIntents(stepIntents, scene, size.width);
-          const isEveryPermitted = stepIntents.every(({isPermitted}) => isPermitted);
-          // we know all the intents belong to the same group
-          if (isEveryPermitted) {
-            ( {scene, groups} = applyIntents(stepIntents, scene, groups, size.width) );
-          } else {
-            groups[x].push(...groups.figure1);
-            groups.figure1 = [];
-            break;
-          }
-        }
-      }
-    }
+    ( {scene} = drop({scene, groups, size}, 'figure1') );
 
     expect(scene).to.eql([
       _, _, _,
@@ -594,55 +509,13 @@ describe('falling', () => {
       height: 5,
     };
 
-    let groups = {
+    const groups = {
       figure0: [8, 10, 11, 14],
       [_]: [0, 3],
       [x]: [1, 2, 4, 5, 6, 7, 9, 12, 13],
     };
 
-    let lastStepIntents;
-
-    while (true) {
-      const stepIntents = buildFallIndentsForGroup(scene, groups.figure0, size.width);
-      forbidOutOfBoundsIntents(stepIntents, size);
-      collideSameValueIntents(stepIntents, scene, size.width);
-      const isEveryPermitted = stepIntents.every(({isPermitted}) => isPermitted);
-      // we know all the intents belong to the same group
-      if (isEveryPermitted) {
-        ( {scene, groups} = applyIntents(stepIntents, scene, groups, size.width) );
-        lastStepIntents = stepIntents;
-      } else {
-        groups[_].push(...groups.figure0);
-        groups.figure0 = [];
-        break;
-      }
-    }
-
-    const filledRows = findFilledRows(lastStepIntents, scene, size.width);
-    if (filledRows.length > 0) {
-      scene = swapRows(filledRows, scene, size.width);
-      const split = splitBase(filledRows, scene, groups, size);
-      if (split) {
-        groups = {
-          ...groups,
-          ...split,
-        };
-        while (true) {
-          const stepIntents = buildFallIndentsForGroup(scene, groups.figure0, size.width);
-          forbidOutOfBoundsIntents(stepIntents, size);
-          collideSameValueIntents(stepIntents, scene, size.width);
-          const isEveryPermitted = stepIntents.every(({isPermitted}) => isPermitted);
-          // we know all the intents belong to the same group
-          if (isEveryPermitted) {
-            ( {scene, groups} = applyIntents(stepIntents, scene, groups, size.width) );
-          } else {
-            groups[_].push(...groups.figure0);
-            groups.figure0 = [];
-            break;
-          }
-        }
-      }
-    }
+    ( {scene} = drop({scene, groups, size}, 'figure0') );
 
     expect(scene).to.eql([
       _, x, _,
