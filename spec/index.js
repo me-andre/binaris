@@ -419,37 +419,81 @@ describe('gravity', () => {
     });
   });
 
-  xit('swaps both filled rows', () => {
-    // todo 2b defined
-
+  it('swaps equal count of rows filled of both values', () => {
     let scene = [
-      _, _, _,
-      _, _, _,
-      x, x, x,
-      x, x, x,
+      _, _, _, _,
+      _, _, _, _,
+      x, _, _, x,
+      _, _, _, x,
+      _, x, x, x,
+      _, x, x, x,
+      _, x, x, _,
+      x, x, x, x,
     ];
 
     const size = {
-      width: 3,
-      height: 4,
+      width: 4,
+      height: 8,
     };
 
-    const groups = {
-      figure1: [6, 9],
-      figure0: [2, 5],
-      [_]: [0, 1, 3, 4],
-      [x]: [7, 8, 10, 11],
+    let groups = {
+      figure1: [11, 15, 19, 23],
+      figure0: [12, 16, 20, 24],
+      [_]: [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 13, 14, 27],
+      [x]: [8, 17, 18, 21, 22, 25, 26, 28, 29, 30, 31],
     };
 
-    ( {scene} = fallStep({scene, groups, size}) );
-
-    prettyPrintScene(scene, size);
+    ( {scene, groups} = fallStep({scene, groups, size}) );
+    ( {scene, groups} = fallStep({scene, groups, size}) );
 
     expect(scene).to.eql([
-      x, x, x,
-      x, x, x,
-      _, _, _,
-      _, _, _,
+      _, _, _, _,
+      _, _, _, _,
+      _, _, _, _,
+      _, _, _, x,
+      _, x, x, x,
+      _, x, x, x,
+      x, x, x, x,
+      x, x, x, x,
+    ]);
+  });
+
+  it('swaps unequal count of rows filled with both values', () => {
+    let scene = [
+      _, _, _, _,
+      _, _, _, _,
+      x, _, _, x,
+      _, _, _, x,
+      _, x, x, x,
+      _, _, x, x,
+      x, x, x, _,
+      x, x, x, x,
+    ];
+
+    const size = {
+      width: 4,
+      height: 8,
+    };
+
+    let groups = {
+      figure1: [11, 15, 19, 23],
+      figure0: [12, 16, 20, 21],
+      [_]: [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 13, 14, 27],
+      [x]: [8, 17, 18, 22, 24, 25, 26, 28, 29, 30, 31],
+    };
+
+    ( {scene, groups} = fallStep({scene, groups, size}) );
+    ( {scene, groups} = fallStep({scene, groups, size}) );
+
+    expect(scene).to.eql([
+      _, _, _, _,
+      _, _, _, _,
+      _, _, _, _,
+      _, _, _, _,
+      _, _, _, x,
+      _, _, x, x,
+      x, x, x, x,
+      x, x, x, x,
     ]);
   });
 });

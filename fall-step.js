@@ -29,6 +29,8 @@ module.exports = {
   fallStep,
 };
 
+const {prettyPrintScene} = require('./util');
+
 function fallStep(state) {
   const {scene, groups, size} = state;
 
@@ -42,57 +44,56 @@ function fallStep(state) {
     conflicts,
   } = applyIntents(intents, scene, groups, size.width);
 
-  {
-    const landedFigures = pickBy(groups, (cellIndices, groupName) => {
-      if (groupName === '0' || groupName === '1') {
-        // by this condition we distinguish between the figures and the bases
-        // todo perform fall on figures, not on the whole scene
-        return false;
-      }
-      return intents.some(({sourceIndex, isPermitted}) => !isPermitted && cellIndices.includes(sourceIndex));
-    });
+  const landedFigures = pickBy(groups, (cellIndices, groupName) => {
+    if (groupName === '0' || groupName === '1') {
+      // by this condition we distinguish between the figures and the bases
+      // todo perform fall on figures, not on the whole scene
+      return false;
+    }
+    return intents.some(({sourceIndex, isPermitted}) => !isPermitted && cellIndices.includes(sourceIndex));
+  });
 
-    const affectedRowIndicesByFigure = mapValues(landedFigures, (cellIndices) => cellIndices.map((cellIndex) => {
+  const filledRowsByFigure = mapValues(landedFigures, (cellIndices) => {
+    const affectedRowIndices = cellIndices.map((cellIndex) => {
       const {y} = getCellCoordsFromIndex(cellIndex, size.width);
       return y;
-    }));
+    });
 
-    for (const name in landedFigures) {
-      const [memberIndex] = landedFigures[name];
-      const value = scene[memberIndex];
-      newGroups[value].push(...landedFigures[name]);
-      newGroups[name] = [];
-    }
+    return findFilledRows(affectedRowIndices, newScene, size.width);
+  });
 
-    for (const groupName in affectedRowIndicesByFigure) {
-      const filledRows = findFilledRows(affectedRowIndicesByFigure[groupName], newScene, size.width);
-      if (filledRows.length > 0) {
+  for (const groupName in landedFigures) {
+    const cellIndices = landedFigures[groupName];
+    const value = scene[cellIndices[0]];
+    newGroups[value].push(...cellIndices);
+    newGroups[groupName] = [];
+
+    const filledRows = filledRowsByFigure[groupName];
+    if (filledRows.length > 0) {
+      (
+        {
+          scene: newScene,
+          groups: newGroups,
+        } = swapRows(filledRows, newScene, newGroups, size.width)
+      );
+      const split = splitBase(filledRows, newScene, newGroups, size);
+      if (split) {
+        newGroups = {
+          ...newGroups,
+          ...split,
+        };
         (
           {
             scene: newScene,
             groups: newGroups,
-          } = swapRows(filledRows, newScene, newGroups, size.width)
+          } = fall({
+            scene: newScene,
+            groups: newGroups,
+            size,
+          }, groupName)
         );
-        const split = splitBase(filledRows, newScene, newGroups, size);
-        if (split) {
-          newGroups = {
-            ...newGroups,
-            ...split,
-          };
-          (
-            {
-              scene: newScene,
-              groups: newGroups,
-            } = fall({
-              scene: newScene,
-              groups: newGroups,
-              size,
-            }, groupName)
-          );
-        }
       }
     }
-
   }
 
   return {
