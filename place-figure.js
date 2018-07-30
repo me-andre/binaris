@@ -32,7 +32,7 @@ function importFigure(drawing) {
   };
 }
 
-function placeFigure({figure, cellValue, groupName, scene, groups, sceneWidth, sceneOffsetY}) {
+function placeFigure({figure, cellValue, groupName, scene, groups, sceneSize, sceneOffsetY}) {
   const {
     indices,
     width,
@@ -40,7 +40,7 @@ function placeFigure({figure, cellValue, groupName, scene, groups, sceneWidth, s
   } = figure;
 
   const figureCenterX = width / 2;
-  const sceneCenterX = sceneWidth / 2;
+  const sceneCenterX = sceneSize.width / 2;
 
   let figureOffsetX = sceneCenterX - figureCenterX;
 
@@ -55,7 +55,11 @@ function placeFigure({figure, cellValue, groupName, scene, groups, sceneWidth, s
     let {x, y} = getCellCoordsFromIndex(cellIndex, width);
     x += figureOffsetX;
     y += figureOffsetY;
-    return getCellIndexFromCoords({x, y}, sceneWidth);
+    if (cellValue === 0) {
+      x = sceneSize.width - x - 1;
+      y = sceneSize.height - y - 1;
+    }
+    return getCellIndexFromCoords({x, y}, sceneSize.width);
   });
 
   scene = [...scene];

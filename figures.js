@@ -36,3 +36,11 @@ figures.T = {
   ],
   width: 3,
 };
+
+figures.Z = {
+  shape: [
+    x, x, _,
+    _, x, x,
+  ],
+  width: 3,
+};
