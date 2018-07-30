@@ -91,7 +91,7 @@ function applyIntents(intents, scene, groups, sceneWidth) {
       conflicts.push(Number(targetIndex));
     }
   }
-  const newScene = scene.slice();
+  const newScene = [...scene];
   permittedIntents = intents.filter(({isPermitted}) => isPermitted);
   permittedIntents.forEach((intent) => {
     const cellValue = scene[intent.sourceIndex];
@@ -133,6 +133,7 @@ function applyIntents(intents, scene, groups, sceneWidth) {
 
 module.exports = {
   getCellCoordsFromIndex,
+  getCellIndexFromCoords,
   forbidOutOfBoundsIntents,
   forbidGroupIntents,
   collideSameValueIntents,
