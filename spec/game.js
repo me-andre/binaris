@@ -1,4 +1,8 @@
 const {
+  mapValues,
+} = require('lodash');
+
+const {
   forbidOutOfBoundsIntents,
   forbidGroupIntents,
   collideSameValueIntents,
@@ -24,6 +28,15 @@ const {
   drop,
 } = require('../drop');
 
+const {
+  importFigure,
+  placeFigure,
+} = require('../place-figure');
+
+const {figures: drawings} = require('../figures');
+
+const figures = mapValues(drawings, importFigure);
+
 module.exports = {
   Game,
 };
@@ -32,6 +45,7 @@ function Game({scene, size, groups}) {
   this.scene = scene;
   this.size = size;
   this.groups = groups;
+  this.sceneOffsetY = 4;
 }
 
 const g = Game.prototype;
@@ -167,5 +181,31 @@ g.drop = function (groupName) {
 
   return {
     game,
+  };
+};
+
+g.placeFigure = function (figureName, cellValue) {
+  const figure = figures[figureName];
+  const {scene, groups, size, sceneOffsetY} = this;
+  const groupName = 'figure' + cellValue;
+  const {
+    scene: newScene,
+    groups: newGroups,
+  } = placeFigure({
+    figure,
+    cellValue,
+    groupName,
+    scene,
+    groups,
+    sceneSize: size,
+    sceneOffsetY,
+  });
+  const game = new Game({
+    scene: newScene,
+    groups: newGroups,
+    size,
+  });
+  return {
+    game
   };
 };
