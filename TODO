@@ -3,3 +3,7 @@ Math.floor -> | 0
 How to store the scene:
 2^1 (color) * 2^1 (is a figure) = 2^2 for each cell
 4 * width * height
+
+1. When touching white figures, invert the coordinates
+2. Store groups as a separate "scenes" or "masks"
+3. Treat collisions as "oversum"
