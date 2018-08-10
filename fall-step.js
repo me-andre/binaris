@@ -69,8 +69,11 @@ function fallStep(state) {
   });
 
   for (const groupName in landedFigures) {
-    const cellIndices = landedFigures[groupName];
-    const value = scene[cellIndices[0]];
+    const value = Number(groupName.charAt(groupName.length - 1));
+    // a hack goes below:
+    // we should land the figures before applying intents because a free figure can fall into a stuck one.
+    // we can however work around that trap by detecting that a figure has lost its cell (cell's value changed).
+    const cellIndices = landedFigures[groupName].filter((cellIndex) => newScene[cellIndex] === value);
     newGroups[value].push(...cellIndices);
     newGroups[groupName] = [];
 
