@@ -1,5 +1,6 @@
 const {
   mapValues,
+  range,
 } = require('lodash');
 
 const {
@@ -39,7 +40,29 @@ const figures = mapValues(drawings, importFigure);
 
 module.exports = {
   Game,
+  createGame,
 };
+
+function createGame(size) {
+  const length = size.width * size.height;
+
+  const groups = {
+    0: range(0, length / 2),
+    1: range(length / 2, length),
+  };
+
+  const scene = new Array(length);
+
+  for (const i of groups[0]) {
+    scene[i] = 0;
+  }
+
+  for (const i of groups[1]) {
+    scene[i] = 1;
+  }
+
+  return new Game({scene, size, groups});
+}
 
 function Game({scene, size, groups}) {
   this.scene = scene;
