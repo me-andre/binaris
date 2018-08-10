@@ -36,13 +36,19 @@ function fallStep(state) {
 
   const intents = buildFallIndents(scene, size.width);
   forbidOutOfBoundsIntents(intents, size);
+  forbidGroupIntents(intents, groups);
   collideSameValueIntents(intents, scene, size.width);
   forbidGroupIntents(intents, groups);
+
   let {
     scene: newScene,
     groups: newGroups,
     conflicts,
   } = applyIntents(intents, scene, groups, size.width);
+
+  if (conflicts.length > 0) {
+    return {scene, groups, conflicts};
+  }
 
   const landedFigures = pickBy(groups, (cellIndices, groupName) => {
     if (groupName === '0' || groupName === '1') {

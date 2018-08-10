@@ -38,9 +38,10 @@ function forbidGroupIntents(intents, cellGroups) {
   });
 }
 
-// an intent which target is of same value as its source is forbidden
-// unless an intent exists for that target which is
-// 1. not forbidden
+// an intent which target cell is of same value as its source is forbidden
+// unless an intent exists which source is that target cell.
+// that intent must satisfy 3 conditions below:
+// 1. it's not forbidden
 // 2. its target is not of the same value or
 // 3. its target has an intent that satisfies the 3 conditions above
 function collideSameValueIntents(intents, scene, sceneWidth) {
